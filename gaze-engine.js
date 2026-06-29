@@ -24,6 +24,7 @@
     cooldownTime: 700,    // ms after selection before next selection is allowed
     cursorDiameter: 56,   // px diameter of virtual cursor
     showVirtualCursor: true,
+    showButtonDots: false,
     showDebug: false,
   };
 
@@ -574,10 +575,15 @@
 
   // ─── Public API ───────────────────────────────────────────────────────────────
 
+  function applyButtonDots() {
+    document.body.classList.toggle('gaze-show-dots', S.showButtonDots);
+  }
+
   function enable() {
     S.enabled = true;
     resetToIdle();
     cacheButtonRects();
+    applyButtonDots();
     saveSettings();
   }
 
@@ -589,6 +595,7 @@
 
   function applySettings(patch) {
     S = { ...S, ...patch };
+    applyButtonDots();
     if (!S.enabled) disable();
     saveSettings();
   }
@@ -604,6 +611,7 @@
     const candidateTimeInput = document.getElementById('gazeCandidateTime');
     const candidateTimeVal = document.getElementById('gazeCandidateTimeValue');
     const cursorToggle = document.getElementById('gazeShowCursor');
+    const dotsToggle = document.getElementById('gazeShowButtonDots');
     const debugToggle = document.getElementById('gazeShowDebug');
 
     if (!toggle) return;
@@ -615,8 +623,8 @@
       candidateTimeInput.value = S.candidateTime;
       candidateTimeVal.textContent = S.candidateTime + 'ms';
       cursorToggle.checked = S.showVirtualCursor;
+      dotsToggle.checked = S.showButtonDots;
       debugToggle.checked = S.showDebug;
-
     }
 
     toggle.addEventListener('change', () => {
@@ -639,6 +647,7 @@
         dwellTime: parseInt(dwellTimeInput.value) || S.dwellTime,
         candidateTime: parseInt(candidateTimeInput.value) || S.candidateTime,
         showVirtualCursor: cursorToggle.checked,
+        showButtonDots: dotsToggle.checked,
         showDebug: debugToggle.checked,
       });
       refreshUI();
@@ -676,6 +685,7 @@
     });
 
     wireSettingsUI();
+    applyButtonDots();
 
     if (S.enabled) enable();
 

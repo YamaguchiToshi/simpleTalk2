@@ -90,6 +90,7 @@ body {
 
 .square-btn {
     aspect-ratio: 1;
+    position: relative;
     min-width: 80px;
     padding: 0;
     font-size: 2rem;
@@ -150,6 +151,7 @@ body {
 
 .kana-btn {
     aspect-ratio: 1;
+    position: relative;
     background: #4BA1D8;
     border: none;
     border-radius: 12px;
@@ -374,6 +376,22 @@ body {
     z-index: 9999;
     display: none;
     transition: width 0.12s ease, height 0.12s ease;
+}
+
+/* ── 視線エンジン：ボタン中央目印ドット ── */
+body.gaze-show-dots .kana-btn:not([disabled]):not(.disabled)::after,
+body.gaze-show-dots #speakBtn::after,
+body.gaze-show-dots #clearBtn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.75);
+    pointer-events: none;
 }
 
 /* ── 視線エンジン：ターゲットハイライト ── */
