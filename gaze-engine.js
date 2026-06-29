@@ -9,11 +9,22 @@
 
   const SETTINGS_KEY = 'gazeEngineSettings_v1';
 
+  // Stability presets: level 0 = responsive, level 4 = stable. Level 2 is the default.
+  // Each level adjusts EMA alpha values (lower = more smoothing) and deviation grace times.
+  const STABILITY_PRESETS = [
+    { alphaLow: 0.30, alphaMid: 0.65, alphaHigh: 0.95, deviationGrace:  50, deviationPause: 150 }, // 0: 応答優先
+    { alphaLow: 0.22, alphaMid: 0.55, alphaHigh: 0.90, deviationGrace:  75, deviationPause: 200 }, // 1: やや応答
+    { alphaLow: 0.15, alphaMid: 0.45, alphaHigh: 0.85, deviationGrace: 100, deviationPause: 300 }, // 2: 標準
+    { alphaLow: 0.10, alphaMid: 0.30, alphaHigh: 0.75, deviationGrace: 150, deviationPause: 450 }, // 3: やや安定
+    { alphaLow: 0.07, alphaMid: 0.20, alphaHigh: 0.65, deviationGrace: 200, deviationPause: 600 }, // 4: 安定優先
+  ];
+
   const DEFAULTS = {
     enabled: false,
-    alphaLow: 0.15,       // EMA coefficient when displacement < threshLowMid
-    alphaMid: 0.45,       // EMA coefficient at mid-range displacement
-    alphaHigh: 0.85,      // EMA coefficient for large movements
+    stabilityLevel: 2,    // index into STABILITY_PRESETS (0=responsive … 4=stable)
+    alphaLow: 0.15,
+    alphaMid: 0.45,
+    alphaHigh: 0.85,
     threshLowMid: 60,     // px boundary between low/mid alpha
     threshMidHigh: 160,   // px boundary between mid/high alpha
     candidateTime: 200,   // ms before locking onto a candidate target
@@ -595,6 +606,11 @@
 
   function applySettings(patch) {
     S = { ...S, ...patch };
+    // Expand stability preset whenever the level is included in the patch
+    if ('stabilityLevel' in patch) {
+      const preset = STABILITY_PRESETS[S.stabilityLevel] || STABILITY_PRESETS[2];
+      S = { ...S, ...preset };
+    }
     applyButtonDots();
     if (!S.enabled) disable();
     saveSettings();
@@ -604,8 +620,12 @@
 
   // ─── Settings UI wiring ────────────────────────────────────────────────────────
 
+  const STABILITY_LABELS = ['応答優先', 'やや応答', '標準', 'やや安定', '安定優先'];
+
   function wireSettingsUI() {
     const toggle = document.getElementById('gazeEngineEnabled');
+    const stabilitySlider = document.getElementById('gazeStabilityLevel');
+    const stabilityLabel = document.getElementById('gazeStabilityLabel');
     const dwellTimeInput = document.getElementById('gazeDwellTime');
     const dwellTimeVal = document.getElementById('gazeDwellTimeValue');
     const candidateTimeInput = document.getElementById('gazeCandidateTime');
@@ -618,6 +638,8 @@
 
     function refreshUI() {
       toggle.checked = S.enabled;
+      stabilitySlider.value = S.stabilityLevel;
+      stabilityLabel.textContent = STABILITY_LABELS[S.stabilityLevel];
       dwellTimeInput.value = S.dwellTime;
       dwellTimeVal.textContent = S.dwellTime + 'ms';
       candidateTimeInput.value = S.candidateTime;
@@ -626,6 +648,10 @@
       dotsToggle.checked = S.showButtonDots;
       debugToggle.checked = S.showDebug;
     }
+
+    stabilitySlider.addEventListener('input', () => {
+      stabilityLabel.textContent = STABILITY_LABELS[+stabilitySlider.value];
+    });
 
     toggle.addEventListener('change', () => {
       if (toggle.checked) enable(); else disable();
@@ -644,6 +670,7 @@
     document.getElementById('saveSettings').addEventListener('click', () => {
       applySettings({
         enabled: toggle.checked,
+        stabilityLevel: +stabilitySlider.value,
         dwellTime: parseInt(dwellTimeInput.value) || S.dwellTime,
         candidateTime: parseInt(candidateTimeInput.value) || S.candidateTime,
         showVirtualCursor: cursorToggle.checked,

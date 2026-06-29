@@ -345,6 +345,27 @@ body {
 }
 
 
+/* ── 安定性スライダー ── */
+.stability-slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.stability-slider-wrap input[type="range"] {
+    flex: 1;
+    accent-color: #4BA1D8;
+    height: 4px;
+    cursor: pointer;
+}
+
+.stability-edge {
+    font-size: 0.75rem;
+    color: #888;
+    white-space: nowrap;
+}
+
 /* ── 設定セクションヘッダー ── */
 .setting-section-header {
     font-size: 0.85rem;
