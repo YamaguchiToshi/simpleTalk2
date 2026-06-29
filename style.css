@@ -1,0 +1,526 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+    background: #4BA1D8;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Dwell用のプログレスインジケーター */
+
+/* Dwell用のプログレスインジケーター */
+.enable-speech-btn {
+    position: relative;
+}
+
+.enable-speech-btn .dwell-indicator {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.enable-speech-btn .dwell-progress {
+    height: 100%;
+    background: white;
+    width: 0%;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.settings-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #173D64;
+    color: white;
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-btn .material-icons {
+    font-size: 28px;
+}
+
+.settings-btn:hover {
+    background: #0f2a47;
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.input-area {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: stretch;
+}
+
+#textOutput {
+    flex: 1;
+    min-height: 80px;
+    font-size: 2rem;
+    padding: 15px;
+    border: 3px solid #4BA1D8;
+    border-radius: 10px;
+    resize: none;
+    font-family: inherit;
+    background: #FFFFFF;
+    color: #173D64;
+}
+
+#textOutput:focus {
+    outline: none;
+    border-color: #173D64;
+    box-shadow: 0 0 0 3px rgba(75, 161, 216, 0.2);
+}
+
+.control-btn {
+    padding: 15px 30px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.square-btn {
+    aspect-ratio: 1;
+    min-width: 80px;
+    padding: 0;
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.square-btn .material-icons {
+    font-size: 32px;
+}
+
+.speak-btn {
+    background: #173D64;
+    color: white;
+}
+
+.speak-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(75, 161, 216, 0.4);
+}
+
+.speak-btn:active {
+    transform: scale(1);
+}
+
+.clear-btn {
+    background: #173D64;
+    color: white;
+}
+
+.clear-btn:hover {
+    background: #0f2a47;
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(23, 61, 100, 0.4);
+}
+
+.clear-btn:active {
+    transform: scale(1);
+}
+
+.keyboard-area {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.gojuon-grid {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    grid-auto-flow: column;
+    gap: 10px;
+    max-width: 100%;
+    direction: rtl;
+}
+
+.kana-btn {
+    aspect-ratio: 1;
+    background: #4BA1D8;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    direction: ltr;
+}
+
+.kana-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    background: #3a8ec4;
+    box-shadow: 0 6px 12px rgba(75, 161, 216, 0.4);
+}
+
+.kana-btn:active {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* グレーアウト */
+.kana-btn.disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.kana-btn.disabled:hover {
+    transform: none;
+    background: #ccc;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 機能ボタンのスタイル */
+.kana-btn.function-btn {
+    background: #173D64;
+    font-size: 1rem;
+}
+
+.kana-btn.backspace-btn .material-icons {
+    font-size: 1.6rem;
+}
+
+.kana-btn.function-btn:hover {
+    background: #0f2a47;
+}
+
+.kana-btn.function-btn.active {
+    background: #FFFFFF;
+    color: #173D64;
+    box-shadow: 0 0 0 3px rgba(75, 161, 216, 0.5);
+}
+
+.kana-btn.backspace-btn {
+    background: #173D64;
+}
+
+.kana-btn.backspace-btn:hover {
+    background: #0f2a47;
+}
+
+/* 特殊ボタン（濁音、半濁音など）のスタイル */
+.kana-btn.special {
+    background: #173D64;
+}
+
+.kana-btn.dakuten {
+    background: #4BA1D8;
+}
+
+/* モーダルのスタイル */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    border-bottom: 2px solid #4BA1D8;
+}
+
+.modal-header h2 {
+    color: #173D64;
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #173D64;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close-btn .material-icons {
+    font-size: 28px;
+}
+
+.close-btn:hover {
+    color: #4BA1D8;
+    transform: scale(1.2);
+}
+
+.modal-body {
+    padding: 25px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.setting-item {
+    margin-bottom: 20px;
+}
+
+.setting-item label {
+    display: block;
+    color: #173D64;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.setting-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.setting-item input[type="number"] {
+    width: 100px;
+    padding: 8px;
+    border: 2px solid #4BA1D8;
+    border-radius: 5px;
+    font-size: 1rem;
+    margin-right: 10px;
+}
+
+.setting-value {
+    color: #173D64;
+    font-weight: 600;
+}
+
+.modal-footer {
+    padding: 20px 25px;
+    border-top: 2px solid #4BA1D8;
+}
+
+.modal-footer .control-btn {
+    width: 100%;
+}
+
+/* 停留クリックのインジケーター */
+.dwell-indicator {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.dwell-progress {
+    height: 100%;
+    background: #FFFFFF;
+    width: 0%;
+    transition: none;
+}
+
+/* ── 設定セクションヘッダー ── */
+.setting-section-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #4BA1D8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 4px;
+    margin: 18px 0 10px;
+}
+
+.setting-hint {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 3px;
+}
+
+/* ── 視線エンジン：仮想カーソル ── */
+#gaze-cursor {
+    position: fixed;
+    pointer-events: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    background: rgba(255, 100, 0, 0.28);
+    border: 3px solid rgba(255, 100, 0, 0.65);
+    transform: translate(-50%, -50%);
+    z-index: 9999;
+    display: none;
+    transition: width 0.12s ease, height 0.12s ease;
+}
+
+/* ── 視線エンジン：ターゲットハイライト ── */
+.kana-btn.gaze-candidate,
+.control-btn.gaze-candidate {
+    outline: 3px solid rgba(255, 200, 0, 0.8);
+    outline-offset: 2px;
+}
+
+.kana-btn.gaze-locked,
+.control-btn.gaze-locked {
+    outline: 3px solid rgba(255, 100, 0, 0.9);
+    outline-offset: 2px;
+    background: #3a8ec4;
+}
+
+.kana-btn.gaze-locked.function-btn {
+    background: #0f2a47;
+}
+
+.kana-btn.gaze-activated,
+.control-btn.gaze-activated {
+    outline: 4px solid rgba(0, 220, 80, 0.95);
+    outline-offset: 2px;
+}
+
+/* ── 視線エンジン：ドウェル進捗バー ── */
+.gaze-dwell-indicator {
+    position: absolute;
+    bottom: 5px;
+    left: 6px;
+    right: 6px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.gaze-dwell-bar {
+    height: 100%;
+    width: 0%;
+    background: #ffffff;
+    border-radius: 3px;
+    transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #gaze-cursor { transition: none; }
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .input-area {
+        padding: 15px;
+    }
+
+    #textOutput {
+        font-size: 1.5rem;
+        min-height: 60px;
+    }
+
+    .square-btn {
+        min-width: 60px;
+        font-size: 1.5rem;
+    }
+
+    .gojuon-grid {
+        gap: 8px;
+    }
+
+    .kana-btn {
+        font-size: 1.4rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    .input-area {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .keyboard-area {
+        padding: 15px;
+    }
+
+    #textOutput {
+        font-size: 1.2rem;
+        min-height: 50px;
+    }
+
+    .square-btn {
+        min-width: 50px;
+        font-size: 1.2rem;
+    }
+
+    .gojuon-grid {
+        gap: 6px;
+    }
+
+    .kana-btn {
+        font-size: 1.2rem;
+        border-radius: 8px;
+    }
+}
