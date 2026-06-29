@@ -576,8 +576,6 @@
 
   function enable() {
     S.enabled = true;
-    // Prevent old dwell engine from double-firing
-    if (typeof dwellSettings !== 'undefined') dwellSettings.enabled = false;
     resetToIdle();
     cacheButtonRects();
     saveSettings();
@@ -619,9 +617,6 @@
       cursorToggle.checked = S.showVirtualCursor;
       debugToggle.checked = S.showDebug;
 
-      // Disable old dwell settings UI when gaze engine is on
-      const oldDwellSection = document.getElementById('oldDwellSection');
-      if (oldDwellSection) oldDwellSection.style.opacity = S.enabled ? '0.4' : '1';
     }
 
     toggle.addEventListener('change', () => {

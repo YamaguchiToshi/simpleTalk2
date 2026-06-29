@@ -52,7 +52,6 @@
                         <input type="checkbox" id="gazeEngineEnabled">
                         視線入力安定化を有効にする
                     </label>
-                    <div class="setting-hint">有効にすると旧停留クリック設定は無効になります</div>
                 </div>
                 <div class="setting-item">
                     <label for="gazeDwellTime">停留時間 (ms):</label>
@@ -77,36 +76,6 @@
                     </label>
                 </div>
 
-                <!-- ── 旧停留クリック設定 ── -->
-                <div id="oldDwellSection">
-                    <div class="setting-section-header">旧停留クリック設定</div>
-                    <div class="setting-item">
-                        <label>
-                            <input type="checkbox" id="dwellClickEnabled">
-                            停留クリックを有効にする
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <label for="dwellTime">停留時間 (ms):</label>
-                        <input type="number" id="dwellTime" min="100" max="5000" step="100" value="700">
-                        <span class="setting-value" id="dwellTimeValue">700ms</span>
-                    </div>
-                    <div class="setting-item">
-                        <label for="settleTime">安定待機時間 (ms):</label>
-                        <input type="number" id="settleTime" min="0" max="1000" step="50" value="150">
-                        <span class="setting-value" id="settleTimeValue">150ms</span>
-                    </div>
-                    <div class="setting-item">
-                        <label for="settleThreshold">安定速度閾値 (px/s):</label>
-                        <input type="number" id="settleThreshold" min="1" max="200" step="5" value="5">
-                        <span class="setting-value" id="settleThresholdValue">5px/s</span>
-                    </div>
-                    <div class="setting-item">
-                        <label for="cooldownTime">クールダウン時間 (ms):</label>
-                        <input type="number" id="cooldownTime" min="0" max="2000" step="50" value="200">
-                        <span class="setting-value" id="cooldownTimeValue">200ms</span>
-                    </div>
-                </div>
             </div>
             <div class="modal-footer">
                 <button id="saveSettings" class="control-btn speak-btn">保存</button>

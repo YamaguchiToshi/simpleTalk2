@@ -91,23 +91,6 @@ let functionButtons = {};
 // AudioContext（音声機能の有効化に使用）
 let audioContext = null;
 
-// 停留クリック関連
-let dwellSettings = {
-    enabled: false,
-    dwellTime: 700,
-    settleTime: 150,
-    settleThreshold: 5,
-    cooldownTime: 200
-};
-let dwellCooldown = false;
-let lockedButton = null;
-let lastMousePos = { x: 0, y: 0 };
-let lastMoveTime = 0;
-const HYSTERESIS_RATIO = 0.15; // ボタン幅の15%
-
-// 各ボタンの停留状態を管理するマップ
-const buttonDwellStates = new WeakMap();
-
 // 50音ボタンの生成
 function createGojuonButtons() {
     // 各列を左から右に配置（あ、か、さ...）
@@ -123,13 +106,10 @@ function createGojuonButtons() {
                 button.dataset.col = col;
                 button.dataset.row = row;
 
-                const clickHandler = (e) => {
-                    initAudio(e); // Initialize audio on interaction
+                button.addEventListener('click', (e) => {
+                    initAudio(e);
                     handleKanaClick(col, row);
-                };
-
-                button.addEventListener('click', clickHandler);
-                setupDwellClick(button, clickHandler);
+                });
 
                 kanaButtons.push(button);
             } else {
@@ -158,13 +138,10 @@ function createGojuonButtons() {
         button.innerHTML = functionLabels[row];
         button.dataset.function = functionTypes[row];
 
-        const clickHandler = (e) => {
-            initAudio(e); // Initialize audio on interaction
+        button.addEventListener('click', (e) => {
+            initAudio(e);
             handleFunctionClick(functionTypes[row]);
-        };
-
-        button.addEventListener('click', clickHandler);
-        setupDwellClick(button, clickHandler);
+        });
 
         functionButtons[functionTypes[row]] = button;
         gojuonGrid.appendChild(button);
@@ -371,7 +348,6 @@ function populateVoiceList() {
 if (voiceSelect) {
     voiceSelect.addEventListener('change', () => {
         selectedVoiceName = voiceSelect.value;
-        // 試し聴きなどはしない（ユーザーの操作を邪魔しないため）
     });
 }
 
@@ -401,13 +377,11 @@ document.addEventListener('visibilitychange', async () => {
 function initAudio(e) {
     if (audioInitialized || speechInitialized) return;
 
-    // イベントがあり、かつ信頼できない（スクリプト生成の）イベントの場合は初期化完了とみなさない
     if (e && !e.isTrusted) {
         console.log('Skipping audio init on untrusted event');
         return;
     }
 
-    // 信頼できるイベント、またはイベント引数がない場合（念のため）は初期化を試みる
     audioInitialized = true;
     speechInitialized = true;
 
@@ -430,19 +404,11 @@ document.body.addEventListener('touchstart', initAudio);
 document.body.addEventListener('click', initAudio);
 document.addEventListener('keydown', initAudio);
 
-// 音声機能が初期化済みかチェック（もはや不要だが後方互換のため残す）
-function ensureSpeechInitialized() {
-    // initAudio()は最初のクリック/タッチで自動的に呼ばれるため、何もしない
-    return speechInitialized;
-}
-
 // 音声読み上げ（1文字）
 function speak(text) {
     if ('speechSynthesis' in window) {
-        // Chromeでの問題を回避：既存の読み上げを完全に停止
         synth.cancel();
 
-        // 少し遅延させてから読み上げを開始（Chromeのバグ回避）
         setTimeout(() => {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ja-JP';
@@ -450,16 +416,13 @@ function speak(text) {
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
 
-            // 音声の選択
             const voices = synth.getVoices();
             let voiceToUse = null;
 
             if (selectedVoiceName) {
-                // ユーザーが選択した音声を探す
                 voiceToUse = voices.find(voice => voice.name === selectedVoiceName);
             }
 
-            // 見つからなかった場合、または未選択の場合はデフォルト（日本語優先）
             if (!voiceToUse) {
                 voiceToUse = voices.find(voice => voice.lang === 'ja-JP' || voice.lang.startsWith('ja'));
             }
@@ -475,7 +438,7 @@ function speak(text) {
 
 // 全文読み上げ
 function speakAll(e) {
-    initAudio(e); // Initialize audio on interaction
+    initAudio(e);
 
     const text = textOutput.value;
     if (text.trim() === '') {
@@ -483,7 +446,6 @@ function speakAll(e) {
     }
 
     if ('speechSynthesis' in window) {
-        // 既存の読み上げを停止
         if (synth.speaking) {
             synth.cancel();
         }
@@ -495,7 +457,6 @@ function speakAll(e) {
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
 
-            // 音声の選択
             const voices = synth.getVoices();
             let voiceToUse = null;
 
@@ -516,177 +477,16 @@ function speakAll(e) {
     }
 }
 
-
 // クリア処理
 function clearText(e) {
-    initAudio(e); // Initialize audio on interaction
+    initAudio(e);
     textOutput.value = '';
     synth.cancel();
 }
 
-// 停留クリックの設定
-function setupDwellClick(button, clickHandler) {
-    // このボタン専用の状態を作成
-    const state = {
-        indicator: null,
-        progress: null,
-        isSettled: false,
-        settleTimer: null,
-        dwellTimer: null
-    };
-
-    buttonDwellStates.set(button, state);
-
-    button.addEventListener('mouseenter', (e) => {
-        // マウスホバーはTrustedだが、音声再生の権限としては弱いためinitAudioは呼ばない
-
-        if (!dwellSettings.enabled || dwellCooldown || button.disabled) return;
-
-        // 既に別のボタンがロックされている場合は何もしない
-        if (lockedButton && lockedButton !== button) return;
-
-        // このボタンをロック
-        lockedButton = button;
-        state.isSettled = false;
-        lastMousePos = { x: e.clientX, y: e.clientY };
-        lastMoveTime = Date.now();
-
-        // 安定待機タイマー開始
-        state.settleTimer = setTimeout(() => {
-            state.isSettled = true;
-            startDwellProgress();
-        }, dwellSettings.settleTime);
-    });
-
-    button.addEventListener('mousemove', (e) => {
-        if (!dwellSettings.enabled || dwellCooldown || button.disabled) return;
-
-        const currentTime = Date.now();
-        const deltaTime = currentTime - lastMoveTime;
-
-        if (deltaTime > 0) {
-            const deltaX = e.clientX - lastMousePos.x;
-            const deltaY = e.clientY - lastMousePos.y;
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-            const speed = (distance / deltaTime) * 1000; // ピクセル/秒
-
-            // 速度が閾値を超えたら安定タイマーをリセット
-            if (speed > dwellSettings.settleThreshold) {
-                if (state.settleTimer) {
-                    clearTimeout(state.settleTimer);
-                    state.settleTimer = null;
-                }
-                if (state.dwellTimer && !state.isSettled) {
-                    // まだ安定していない場合は停留タイマーもリセット
-                    cleanupDwellProgress();
-                }
-
-                state.isSettled = false;
-
-                // 安定待機タイマーを再開
-                state.settleTimer = setTimeout(() => {
-                    state.isSettled = true;
-                    startDwellProgress();
-                }, dwellSettings.settleTime);
-            }
-        }
-
-        lastMousePos = { x: e.clientX, y: e.clientY };
-        lastMoveTime = currentTime;
-    });
-
-    button.addEventListener('mouseleave', () => {
-        if (!dwellSettings.enabled) return;
-
-        // ロックされていない場合は即座にクリーンアップ
-        if (lockedButton !== button) {
-            cleanupDwell();
-        }
-        // ロックされている場合は、グローバルハンドラで処理される
-    });
-
-    function startDwellProgress() {
-        // すでにプログレスが開始されている場合は何もしない
-        if (state.indicator) return;
-
-        // インジケーターを作成
-        state.indicator = document.createElement('div');
-        state.indicator.className = 'dwell-indicator';
-        state.progress = document.createElement('div');
-        state.progress.className = 'dwell-progress';
-
-        state.indicator.appendChild(state.progress);
-        button.style.position = 'relative';
-        button.appendChild(state.indicator);
-
-        // 確実に0%から開始するため、setTimeoutで少し遅延
-        setTimeout(() => {
-            if (!state.progress) return;
-
-            // 初期状態を明示的に設定
-            state.progress.style.width = '0%';
-            state.progress.style.transition = 'none';
-
-            // 強制リフロー
-            void state.progress.offsetWidth;
-
-            // トランジションを開始
-            state.progress.style.transition = `width ${dwellSettings.dwellTime}ms linear`;
-            state.progress.style.width = '100%';
-        }, 10);
-
-        // 停留タイマー
-        state.dwellTimer = setTimeout(() => {
-            // 実際のクリックイベントを発火させる（ユーザージェスチャーとして認識される可能性）
-            try {
-                const clickEvent = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                });
-                button.dispatchEvent(clickEvent);
-            } catch (e) {
-                // フォールバック: 直接ハンドラを呼ぶ
-                clickHandler();
-            }
-            cleanupDwell();
-
-            // クールダウン開始
-            dwellCooldown = true;
-            setTimeout(() => {
-                dwellCooldown = false;
-            }, dwellSettings.cooldownTime);
-        }, dwellSettings.dwellTime);
-    }
-
-    function cleanupDwellProgress() {
-        if (state.dwellTimer) {
-            clearTimeout(state.dwellTimer);
-            state.dwellTimer = null;
-        }
-        if (state.indicator && state.indicator.parentNode) {
-            state.indicator.parentNode.removeChild(state.indicator);
-            state.indicator = null;
-            state.progress = null;
-        }
-    }
-
-    function cleanupDwell() {
-        if (state.settleTimer) {
-            clearTimeout(state.settleTimer);
-            state.settleTimer = null;
-        }
-        cleanupDwellProgress();
-        if (lockedButton === button) {
-            lockedButton = null;
-        }
-        state.isSettled = false;
-    }
-}
-
 // 設定モーダルの制御
 settingsBtn.addEventListener('click', (e) => {
-    initAudio(e); // Initialize audio on interaction
+    initAudio(e);
     settingsModal.classList.add('active');
     loadSettings();
 });
@@ -708,126 +508,18 @@ saveSettings.addEventListener('click', () => {
 
 // 設定の読み込み
 function loadSettings() {
-    const stored = localStorage.getItem('dwellSettings');
-    if (stored) {
-        dwellSettings = JSON.parse(stored);
-    }
-
-    // 音声設定の読み込み
     const storedVoice = localStorage.getItem('voiceName');
     if (storedVoice) {
         selectedVoiceName = storedVoice;
-        // プルダウンが既に生成されていれば選択を反映
         if (voiceSelect && voiceSelect.options.length > 1) {
             voiceSelect.value = selectedVoiceName;
         }
     }
-
-    document.getElementById('dwellClickEnabled').checked = dwellSettings.enabled;
-    document.getElementById('dwellTime').value = dwellSettings.dwellTime;
-    document.getElementById('settleTime').value = dwellSettings.settleTime;
-    document.getElementById('settleThreshold').value = dwellSettings.settleThreshold;
-    document.getElementById('cooldownTime').value = dwellSettings.cooldownTime;
-    document.getElementById('dwellTimeValue').textContent = dwellSettings.dwellTime + 'ms';
-    document.getElementById('settleTimeValue').textContent = dwellSettings.settleTime + 'ms';
-    document.getElementById('settleThresholdValue').textContent = dwellSettings.settleThreshold + 'px/s';
-    document.getElementById('cooldownTimeValue').textContent = dwellSettings.cooldownTime + 'ms';
 }
 
 // 設定の保存
 function saveSettingsToStorage() {
-    dwellSettings.enabled = document.getElementById('dwellClickEnabled').checked;
-    dwellSettings.dwellTime = parseInt(document.getElementById('dwellTime').value);
-    dwellSettings.settleTime = parseInt(document.getElementById('settleTime').value);
-    dwellSettings.settleThreshold = parseInt(document.getElementById('settleThreshold').value);
-    dwellSettings.cooldownTime = parseInt(document.getElementById('cooldownTime').value);
-
-    localStorage.setItem('dwellSettings', JSON.stringify(dwellSettings));
-
-    // 音声設定の保存
     localStorage.setItem('voiceName', selectedVoiceName);
-}
-
-// 設定値のリアルタイム更新
-document.getElementById('dwellTime').addEventListener('input', (e) => {
-    document.getElementById('dwellTimeValue').textContent = e.target.value + 'ms';
-});
-
-document.getElementById('settleTime').addEventListener('input', (e) => {
-    document.getElementById('settleTimeValue').textContent = e.target.value + 'ms';
-});
-
-document.getElementById('settleThreshold').addEventListener('input', (e) => {
-    document.getElementById('settleThresholdValue').textContent = e.target.value + 'px/s';
-});
-
-document.getElementById('cooldownTime').addEventListener('input', (e) => {
-    document.getElementById('cooldownTimeValue').textContent = e.target.value + 'ms';
-});
-
-
-// グローバルマウスムーブイベントでヒステリシスを処理
-document.addEventListener('mousemove', (e) => {
-    if (!dwellSettings.enabled || !lockedButton) return;
-
-    const rect = lockedButton.getBoundingClientRect();
-    const hysteresisMargin = Math.min(rect.width, rect.height) * HYSTERESIS_RATIO;
-
-    // ヒステリシスマージンを含めた拡張領域
-    const extendedRect = {
-        left: rect.left - hysteresisMargin,
-        right: rect.right + hysteresisMargin,
-        top: rect.top - hysteresisMargin,
-        bottom: rect.bottom + hysteresisMargin
-    };
-
-    // マウスが拡張領域の外に出たらロックを解除
-    if (e.clientX < extendedRect.left ||
-        e.clientX > extendedRect.right ||
-        e.clientY < extendedRect.top ||
-        e.clientY > extendedRect.bottom) {
-
-        // 別のボタン上にいるかチェック
-        const elementUnderMouse = document.elementFromPoint(e.clientX, e.clientY);
-        const newButton = elementUnderMouse?.closest('.kana-btn, .control-btn');
-
-        if (newButton && newButton !== lockedButton && !newButton.disabled) {
-            // 新しいボタンに切り替え
-            unlockButton();
-        } else if (!newButton) {
-            // ボタンの外に出た
-            unlockButton();
-        }
-    }
-});
-
-function unlockButton() {
-    if (lockedButton) {
-        const state = buttonDwellStates.get(lockedButton);
-
-        if (state) {
-            // タイマーをクリア
-            if (state.settleTimer) {
-                clearTimeout(state.settleTimer);
-                state.settleTimer = null;
-            }
-            if (state.dwellTimer) {
-                clearTimeout(state.dwellTimer);
-                state.dwellTimer = null;
-            }
-
-            // プログレスインジケーターを削除
-            if (state.indicator && state.indicator.parentNode) {
-                state.indicator.parentNode.removeChild(state.indicator);
-                state.indicator = null;
-                state.progress = null;
-            }
-
-            state.isSettled = false;
-        }
-
-        lockedButton = null;
-    }
 }
 
 // イベントリスナー
@@ -836,14 +528,6 @@ clearBtn.addEventListener('click', (e) => {
     initAudio(e);
     clearText(e);
 });
-
-// 読み上げとクリアボタンに停留クリックを設定
-setupDwellClick(speakBtn, speakAll);
-setupDwellClick(clearBtn, (e) => {
-    initAudio(e);
-    clearText(e);
-});
-
 
 // 初期化
 initSpeech();

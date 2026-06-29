@@ -11,29 +11,6 @@ body {
     padding: 20px;
 }
 
-/* Dwell用のプログレスインジケーター */
-
-/* Dwell用のプログレスインジケーター */
-.enable-speech-btn {
-    position: relative;
-}
-
-.enable-speech-btn .dwell-indicator {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    right: 5px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.enable-speech-btn .dwell-progress {
-    height: 100%;
-    background: white;
-    width: 0%;
-}
 
 .container {
     max-width: 1200px;
@@ -365,24 +342,6 @@ body {
     width: 100%;
 }
 
-/* 停留クリックのインジケーター */
-.dwell-indicator {
-    position: absolute;
-    top: 5px;
-    left: 5px;
-    right: 5px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.dwell-progress {
-    height: 100%;
-    background: #FFFFFF;
-    width: 0%;
-    transition: none;
-}
 
 /* ── 設定セクションヘッダー ── */
 .setting-section-header {
